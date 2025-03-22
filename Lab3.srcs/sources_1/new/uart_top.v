@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 2025/03/07 21:49:33
+// Create Date: 2025/03/22 21:49:33
 // Design Name: 
 // Module Name: uart_top
 // Project Name: 
@@ -50,8 +50,8 @@ module uart_top #(
   localparam s_WAIT_TX      = 3'b100;
   localparam s_DONE         = 3'b101;
    
-  // Declare all variables needed for the finite state machine 
-  // -> the FSM state
+  //  
+  // the FSM state
   reg [2:0]   rFSM;  
   
   // Connection to UART TX (inputs = registers, outputs = wires)
@@ -97,7 +97,7 @@ module uart_top #(
     .oRes(wAddRes), 
     .oDone(wAddDone) );
      
-  reg [$clog2(NBYTES):0] rCnt;
+  reg [$clog2(NBYTES):0] rCnt; 
   
   reg [$clog2(NBYTES):0] rRxCnt;
   
@@ -106,7 +106,7 @@ module uart_top #(
   always @(posedge iClk)
   begin
   
-  // reset all registers upon reset
+  // reset all when reset
   if (iRst == 1 ) 
     begin
       rFSM <= s_IDLE;
@@ -130,20 +130,20 @@ module uart_top #(
           
         s_WAIT_RX :
           begin
-              // When we receive a byte, store it in the buffer
+              // wait for one RX to be done 
               if (wRxDone == 1)
                 begin
                   // Shift the buffer and add the new byte at the end
                   if (rRxCnt < NBYTES)
                     begin
-                    rA <= {rA[NBYTES*8-9:0], wRxByte};//because UART first transmit LSB
+                        rA <= {rA[NBYTES*8-9:0], wRxByte};// shifting the byte 
                     rRxCnt <= rRxCnt + 1;
                     end
                   else if (rRxCnt < NBYTES*2)
                     begin
                     rB <= {rB[NBYTES*8-9:0], wRxByte};
                     rRxCnt <= rRxCnt + 1;
-                  // If we've received all bytes, start transmitting
+                  // Jump to TX after all RX done 
                     if (rRxCnt == NBYTES*2 - 1)
                         begin
                         rFSM <= s_ADD;
@@ -188,8 +188,8 @@ s_ADD :
                     end
                 else
                     begin
-                    rTxByte <= rRes[NBYTES*8-1:NBYTES*8-8];            // we send the uppermost byte
-                    rRes <= {1'b0, rRes[NBYTES*8-9:0] , 8'b0000_0000};    // we shift from right to left
+                        rTxByte <= rRes[NBYTES*8-1:NBYTES*8-8];            // TX shifting(reversed from RX)
+                    rRes <= {1'b0, rRes[NBYTES*8-9:0] , 8'b0000_0000};    // from right to left
                     //remeber rRes has NBYTES+1 bits
                     end
                 rCnt <= rCnt + 1;
